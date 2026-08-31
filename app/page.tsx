@@ -1,69 +1,257 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+
+import ManualSalaryForm from "@/components/ManualSalaryForm";
+import ExcelUpload from "@/components/ExcelUpload";
+import SalaryPreview from "@/components/SalaryPreview";
+
+import { EmployeeSalary, SalaryCalculation } from "@/types/salary";
+import { calculateSalary } from "@/lib/salary-calculator";
+
+export default function SalaryCalculatorPage() {
+  const [employees, setEmployees] = useState<SalaryCalculation[]>([]);
+
+  /* ============================================================
+     ADD EMPLOYEE
+  ============================================================ */
+
+  function handleAddEmployee(employee: EmployeeSalary) {
+    const calculation = calculateSalary(employee);
+
+    setEmployees((current) => [...current, calculation]);
+  }
+
+  /* ============================================================
+     UPDATE EMPLOYEE
+  ============================================================ */
+
+  function handleUpdate(
+    id: string,
+    field: keyof EmployeeSalary,
+    value: string,
+  ) {
+    setEmployees((current) =>
+      current.map((employee) => {
+        if (employee.id !== id) {
+          return employee;
+        }
+
+        const updatedEmployee: EmployeeSalary = {
+          id: employee.id,
+          name: field === "name" ? value : employee.name,
+          basicSalary:
+            field === "basicSalary"
+              ? Number(value)
+              : Number(employee.basicSalary),
+          daysInMonth:
+            field === "daysInMonth"
+              ? Number(value)
+              : Number(employee.daysInMonth),
+          presentDays:
+            field === "presentDays"
+              ? Number(value)
+              : Number(employee.presentDays),
+          lateDays:
+            field === "lateDays" ? Number(value) : Number(employee.lateDays),
+        };
+
+        return calculateSalary(updatedEmployee);
+      }),
+    );
+  }
+
+  /* ============================================================
+     DELETE EMPLOYEE
+  ============================================================ */
+
+  function handleDelete(id: string) {
+    setEmployees((current) => current.filter((employee) => employee.id !== id));
+  }
+
+  /* ============================================================
+     EXCEL IMPORT
+  ============================================================ */
+
+  function handleExcelImport(importedEmployees: EmployeeSalary[]) {
+    const calculatedEmployees = importedEmployees.map((employee) =>
+      calculateSalary(employee),
+    );
+
+    setEmployees((current) => [...current, ...calculatedEmployees]);
+  }
+
+  /* ============================================================
+     TOTALS
+  ============================================================ */
+
+  const totalLateDeduction = employees.reduce(
+    (total, employee) => total + Number(employee.lateDeduction || 0),
+    0,
+  );
+
+  const totalPayable = employees.reduce(
+    (total, employee) => total + Number(employee.toBePaid || 0),
+    0,
+  );
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
+    <main className="min-h-screen bg-slate-100">
+      <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        {/* ====================================================
+            COMPANY HEADER
+        ==================================================== */}
+
+        <header className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+            {/* BRAND + PAGE TITLE */}
+
+            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+              {/* LOGO */}
+
+              <div className="flex h-[62px] w-[185px] shrink-0 items-center sm:h-[70px] sm:w-[210px]">
+                <img
+                  src="/logo.png"
+                  alt="Shri Balaaji Advertising & Marketing Pvt. Ltd."
+                  className="h-full w-full object-contain object-left"
+                />
+              </div>
+
+              {/* DIVIDER */}
+
+              <div className="hidden h-12 w-px bg-slate-200 sm:block" />
+
+              {/* PAGE TITLE */}
+
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                  Salary Calculator
+                </h1>
+
+                <p className="mt-1 text-sm text-slate-500 sm:text-base">
+                  Employee salary & attendance management
+                </p>
+              </div>
+            </div>
+
+            {/* PAYROLL BADGE */}
+
+            <div className="hidden shrink-0 md:block">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Payroll
+                </p>
+
+                <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                  Monthly Salary
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* HEADER BOTTOM LINE */}
+
+          <div className="h-1 bg-slate-900" />
+        </header>
+
+        {/* ====================================================
+            INTRO
+        ==================================================== */}
+
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-slate-900">
+            Salary Management
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Add employees manually or import multiple employees using an Excel
             file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* ====================================================
+            INPUT SECTION
+        ==================================================== */}
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          {/* MANUAL ENTRY */}
+
+          <ManualSalaryForm onAdd={handleAddEmployee} />
+
+          {/* EXCEL UPLOAD */}
+
+          <ExcelUpload onImport={handleExcelImport} />
+        </section>
+
+        {/* ====================================================
+            SALARY PREVIEW
+        ==================================================== */}
+
+        {employees.length > 0 && (
+          <SalaryPreview
+            employees={employees}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            totalLateDeduction={totalLateDeduction}
+            totalPayable={totalPayable}
+          />
+        )}
+
+        {/* ====================================================
+            EMPTY STATE
+        ==================================================== */}
+
+        {employees.length === 0 && (
+          <section className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+              <svg
+                width="25"
+                height="25"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-slate-500"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+
+                <path d="M8 8h8" />
+                <path d="M8 12h8" />
+                <path d="M8 16h4" />
+              </svg>
+            </div>
+
+            <h3 className="mt-4 text-base font-bold text-slate-900">
+              No employees added yet
+            </h3>
+
+            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+              Add an employee manually or upload an Excel file to start
+              calculating salaries.
+            </p>
+          </section>
+        )}
+
+        {/* ====================================================
+            FOOTER
+        ==================================================== */}
+
+        <footer className="mt-8 border-t border-slate-200 py-5">
+          <div className="flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+            <p className="text-xs text-slate-400">
+              Shri Balaaji Advertising & Marketing Pvt. Ltd.
+            </p>
+
+            <p className="text-xs text-slate-400">Salary Management System</p>
+          </div>
+        </footer>
+      </div>
+    </main>
   );
 }
