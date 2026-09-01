@@ -32,7 +32,7 @@ export function calculateSalary(employee: EmployeeSalary): SalaryCalculation {
 
   const earnedSalary = perDaySalary * presentDays;
 
-  const lateDeduction = perDaySalary * lateDays;
+  const lateDeduction = perDaySalary / 2 * lateDays;
 
   const toBePaid = earnedSalary - lateDeduction;
 
